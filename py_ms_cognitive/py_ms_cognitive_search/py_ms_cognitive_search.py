@@ -5,9 +5,8 @@
 Main class for doing actual searches.
 """
 
-import time
 import re
-
+import time
 
 __author__ = 'tristantao (https://github.com/tristantao)'
 
@@ -21,12 +20,12 @@ class PyMsCognitiveWebSearchException(Exception):
 
 
 class PyMsCognitiveSearch(object):
-
     API_VERSION_STRING = 'v7.0'
 
     """
     Shell class for the individual searches
     """
+
     def __init__(self, api_key, query, query_url, custom_params={}, silent_fail=False):
         self.api_key = api_key
         self.silent_fail = silent_fail
@@ -39,46 +38,52 @@ class PyMsCognitiveSearch(object):
         self.most_recent_json = None
 
     def get_json_results(self, response):
-        '''
+        """
         Parses the request result and returns the JSON object. Handles all errors.
-        '''
+        """
         try:
             # return the proper JSON object, or error code if request didn't go through.
             self.most_recent_json = response.json()
             json_results = response.json()
-            if response.status_code in [401, 403]: #401 is invalid key, 403 is out of monthly quota.
-                raise PyMsCognitiveWebSearchException("CODE {code}: {message}".format(code=response.status_code,message=json_results["message"]) )
-            elif response.status_code in [429]: #429 means try again in x seconds.
+            if response.status_code in [401, 403]:  # 401 is invalid key, 403 is out of monthly quota.
+                raise PyMsCognitiveWebSearchException(
+                    "CODE {code}: {message}".format(code=response.status_code, message=json_results["message"]))
+            elif response.status_code in [429]:  # 429 means try again in x seconds.
                 message = json_results['message']
                 try:
                     # extract time out seconds from response
                     timeout = int(re.search('in (.+?) seconds', message).group(1)) + 1
-                    print ("CODE 429, sleeping for {timeout} seconds").format(timeout=str(timeout))
+                    print("CODE 429, sleeping for {timeout} seconds").format(timeout=str(timeout))
                     time.sleep(timeout)
-                except (AttributeError, ValueError) as e:
+                except (AttributeError, ValueError):
                     if not self.silent_fail:
-                        raise PyMsCognitiveWebSearchException("CODE 429. Failed to auto-sleep: {message}".format(code=response.status_code,message=json_results["message"]) )
+                        raise PyMsCognitiveWebSearchException(
+                            "CODE 429. Failed to auto-sleep: {message}".format(code=response.status_code,
+                                                                               message=json_results["message"]))
                     else:
-                        print ("CODE 429. Failed to auto-sleep: {message}. Trying again in 5 seconds.".format(code=response.status_code,message=json_results["message"]))
+                        print("CODE 429. Failed to auto-sleep: {message}. Trying again in 5 seconds.".format(
+                            code=response.status_code, message=json_results["message"]))
                         time.sleep(5)
-        except ValueError as vE:
+        except ValueError:
             if not self.silent_fail:
-                raise PyMsCognitiveWebSearchException("Request returned with code %s, error msg: %s" % (r.status_code, r.text))
+                raise PyMsCognitiveWebSearchException(
+                    "Request returned with code %s, error msg: %s" % (response.status_code, response.text))
             else:
-                print ("[ERROR] Request returned with code %s, error msg: %s. \nContinuing in 5 seconds." % (r.status_code, r.text))
+                print("[ERROR] Request returned with code %s, error msg: %s. \nContinuing in 5 seconds." % (
+                    response.status_code, response.text))
                 time.sleep(5)
         return json_results
 
     def search(self, limit=50, format='json'):
-        ''' Returns the result list, and also the uri for next page (returned_list, next_uri) '''
+        """ Returns the result list, and also the uri for next page (returned_list, next_uri) """
         return self._search(limit, format)
 
     def search_all(self, quota=50, format='json'):
-        '''
+        """
         Returns a single list containing up to 'limit' Result objects
         Will keep requesting until quota is met
         Will also truncate extra results to return exactly the given quota
-        '''
+        """
         quota_left = quota
         results = []
         while quota_left > 0:
@@ -98,14 +103,16 @@ class QueryChecker():
     All methods are static and do not modify state.
     if/else mess below forgoes optimization in favor of clarity.
     """
+
     @staticmethod
     def check_web_params(query_dict, header_dict):
-        responseFilters = ('Computation', 'Images', 'News', 'RelatedSearches', 'SpellSuggestions', 'TimeZone', 'Videos', 'Webpages')
+        responsefilters = (
+            'Computation', 'Images', 'News', 'RelatedSearches', 'SpellSuggestions', 'TimeZone', 'Videos', 'Webpages')
 
         if 'cc' in query_dict.keys():
             if query_dict['cc'] and not header_dict['Accept-Language']:
                 raise AssertionError('Attempt to use country-code without specifying language.')
-            if query_dict['mkt']:
+            if "mkt" in query_dict.keys():
                 raise ReferenceError('cc and mkt cannot be specified simultaneously')
         if 'count' in query_dict.keys():
             if int(query_dict['count']) >= 51 or int(query_dict['count']) < 0:
@@ -117,15 +124,16 @@ class QueryChecker():
             if int(query_dict['offset']) < 0:
                 raise ValueError('Offset cannot be negative.')
         if 'responseFilter' in query_dict.keys():
-            if query_dict['responseFilter'] not in responseFilters:
+            if query_dict['responseFilter'] not in responsefilters:
                 raise ValueError('Improper response filter.')
         if 'safeSearch' in query_dict.keys():
             if query_dict['safeSearch'] not in ('Off', 'Moderate', 'Strict'):
                 raise ValueError('safeSearch setting must be Off, Moderate, or Strict. Assume Case-Sensitive.')
             if 'X-Search-ClientIP' in query_dict.keys():
-                raw_input('You have specified both an X-Search-ClientIP header and safesearch setting\nplease note: header takes precedence')
+                raise ValueError('You have specified both an X-Search-ClientIP header and safesearch setting\n'
+                                 'please note: header takes precedence')
         if 'setLang' in query_dict.keys():
-            if header_dict['Accept-Language']:
+            if 'Accept-Language' in header_dict.keys():
                 raise AssertionError('Attempt to use both language header and query param.')
         if 'textDecorations' in query_dict.keys():
             if query_dict['textDecorations'].lower() not in ('true', 'false'):
