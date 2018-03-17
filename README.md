@@ -11,19 +11,12 @@ The modules require different microsoft keys for different services, so you'll n
 
 Installation
 =====
-#####for python 2.7.* 
+##### for Python 3
 
 ```sh
-pip install py-ms-cognitive
+pip install git+https://github.com/guiscaranse/py-ms-cognitive.git@master
 ```
 
-#####for python 3.*
-
-```sh
-pip3 install py-ms-cognitive
-```
-
-*Requires the requests library.
 
 Usage
 =====
