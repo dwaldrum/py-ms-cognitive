@@ -16,7 +16,11 @@ Installation
 ```sh
 pip install git+https://github.com/guiscaranse/py-ms-cognitive.git@master
 ```
+##### for Pipenv (Python 3)
 
+```sh
+pipenv install git+https://github.com/guiscaranse/py-ms-cognitive.git@master#egg=<py-ms-cognitive>
+```
 
 Usage
 =====
